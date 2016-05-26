@@ -17,6 +17,8 @@
 package com.android.deskclock;
 
 import android.app.Activity;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -40,6 +42,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 
+import net.margaritov.preference.colorpicker.ColorPickerPreference;
+
 /**
  * Settings for the Alarm Clock.
  */
@@ -57,6 +61,12 @@ public class SettingsActivity extends BaseActivity {
     public static final String KEY_VOLUME_BUTTONS = "volume_button_setting";
     public static final String KEY_WEEK_START = "week_start";
     public static final String KEY_ALARM_SETTINGS = "key_alarm_settings";
+    static final String KEY_DIGITAL_CLOCK_TIME_COLOR =
+            "digital_clock_time_color";
+    static final String KEY_DIGITAL_CLOCK_DATE_COLOR =
+            "digital_clock_date_color";
+    static final String KEY_DIGITAL_CLOCK_ALARM_COLOR =
+            "digital_clock_alarm_color";
 
     public static final String DEFAULT_VOLUME_BEHAVIOR = "0";
     public static final String VOLUME_BEHAVIOR_SNOOZE = "1";
@@ -157,6 +167,18 @@ public class SettingsActivity extends BaseActivity {
                 final ListPreference weekStartPref = (ListPreference) findPreference(KEY_WEEK_START);
                 final int idx = weekStartPref.findIndexOfValue((String) newValue);
                 weekStartPref.setSummary(weekStartPref.getEntries()[idx]);
+            } else if (KEY_DIGITAL_CLOCK_TIME_COLOR.equals(pref.getKey())
+                    || KEY_DIGITAL_CLOCK_DATE_COLOR.equals(pref.getKey())
+                    || KEY_DIGITAL_CLOCK_ALARM_COLOR.equals(pref.getKey())) {
+                AppWidgetManager widgetManager = AppWidgetManager.getInstance(getActivity());
+                int[] widgetIds = widgetManager.getAppWidgetIds(
+                        new ComponentName(getActivity(),
+                        com.android.alarmclock.DigitalAppWidgetProvider.class));
+                Intent update = new Intent(getActivity(),
+                com.android.alarmclock.DigitalAppWidgetProvider.class);
+                update.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                update.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds);
+                getActivity().sendBroadcast(update);
             }
             // Set result so DeskClock knows to refresh itself
             getActivity().setResult(RESULT_OK);
@@ -285,6 +307,18 @@ public class SettingsActivity extends BaseActivity {
             weekStartPref.setValueIndex(idx);
             weekStartPref.setSummary(weekStartPref.getEntries()[idx]);
             weekStartPref.setOnPreferenceChangeListener(this);
+
+            ColorPickerPreference clockTimeColor = (ColorPickerPreference)
+                    findPreference(KEY_DIGITAL_CLOCK_TIME_COLOR);
+            clockTimeColor.setOnPreferenceChangeListener(this);
+
+            ColorPickerPreference clockDateColor = (ColorPickerPreference)
+                    findPreference(KEY_DIGITAL_CLOCK_DATE_COLOR);
+            clockDateColor.setOnPreferenceChangeListener(this);
+
+            ColorPickerPreference clockAlarmColor = (ColorPickerPreference)
+                    findPreference(KEY_DIGITAL_CLOCK_ALARM_COLOR);
+            clockAlarmColor.setOnPreferenceChangeListener(this);
         }
 
         private void updateAutoSnoozeSummary(ListPreference listPref, String delay) {
